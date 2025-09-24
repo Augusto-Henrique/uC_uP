@@ -1,0 +1,4 @@
+Warning[207] ..\..\SRC\MAIN.ASM 107 : Found label after column 1. (LOW_ISR)
+Warning[205] ..\..\SRC\MAIN.ASM 115 : Found directive in column 1. (CBLOCK)
+Warning[205] ..\..\SRC\MAIN.ASM 117 : Found directive in column 1. (ENDC)
+Warning[205] ..\..\SRC\MAIN.ASM 191 : Found directive in column 1. (END)
