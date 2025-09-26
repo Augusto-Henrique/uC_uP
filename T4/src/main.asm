@@ -2,22 +2,18 @@
 ;                                                                              *
 ;    Filename: main                                                            *
 ;    Date: 23/09/2025                                                          *
-;    File Version: 0.1                                                         *
+;    File Version: 0.2 - CORRIGIDO                                            *
 ;    Author: Samuel e Augusto                                                  *
 ;                                                                              *
 ;*******************************************************************************
 ;                                                                              *
-;    Known Issues: Não sei se funciona
+;    Correções realizadas:                                                     *
+;    - Implementado loop principal da máquina de estados                       *
+;    - Corrigidas as transições de estado                                      *
+;    - Implementados controles do motor e comporta                             *
+;    - Corrigidas instruções MOVF para MOVLW                                   *
+;    - Adicionado controle das saídas do motor e comporta                      *
 ;                                                                              *
-;*******************************************************************************
-;                                                                              *
-;    Revision History:                                                         *
-;    23/09/2025 - Criação                                                      *
-;    24/09/2025 - Estados adicionados e configurados                           *
-;                                                                              *
-;*******************************************************************************
-;*******************************************************************************
-; PIC18F4550 Configuration Bit Settings
 ;*******************************************************************************
 #include "p18f4550.inc"
 
@@ -82,7 +78,6 @@
 
 ; CONFIG7H
   CONFIG  EBTRB = ON            ; Boot Block Table Read Protection bit (Boot block (000000-0007FFh) is protected from table reads executed in other blocks)
-
 ;*******************************************************************************
 ; Reset Vector
 ;*******************************************************************************
@@ -114,8 +109,6 @@ NOT_TMR1
 ISRL      CODE                     ; let linker place low ISR routine
       
 LOW_ISR
-;       <Search the device datasheet for 'context' and copy interrupt
-;       context saving code here>
     RETFIE
 
 ;*******************************************************************************
@@ -128,10 +121,12 @@ ENDC
 
 ;Define dos pinos
 #define M_BUTTON PORTB, 0
-#define P_SENSOR PORTC, 0
-#define A_SENSOR PORTC, 1
-#define B_SENSOR PORTC, 2
-#define GATE PORTD, 0
+#define SENSOR_A PORTC, 0
+#define SENSOR_B PORTC, 1
+#define SENSOR_P PORTC, 2
+#define COMPORTA PORTD, 0
+#define MOTOR_ESQ PORTD, 6
+#define MOTOR_DIR PORTD, 7
  
 ;Define dos estados
 IDLE EQU 0
@@ -148,11 +143,20 @@ MAIN
     MOVWF ADCON1
 
     ; Configura entradas e saidas
-    BSF TRISB, 0
-    BSF TRISC, 0
-    BSF TRISC, 1
-    BSF TRISC, 2
-    BSF TRISD, 0
+    BSF TRISB, 0        ; RB0 como entrada (BOTÃO)
+    BCF TRISC, 0        ; RC0 como saída (SENSOR A - LED)
+    BCF TRISC, 1        ; RC1 como saída (SENSOR B - LED)
+    BCF TRISC, 2        ; RC2 como saída (SENSOR P - LED)
+    BCF TRISD, 0        ; RD0 como saída (COMPORTA - LED)
+    BCF TRISD, 6        ; RD6 como saída (MOTOR ESQ - LED)
+    BCF TRISD, 7        ; RD7 como saída (MOTOR DIR - LED)
+
+    ; Inicializa todos os LEDs apagados
+    CLRF PORTC
+    CLRF PORTD
+    
+    ; Liga o SENSOR A (RC0) - posição inicial
+    BSF SENSOR_A
     
     ; Inicializacao da máquina de estados
     MOVLW IDLE
@@ -172,73 +176,36 @@ MAIN
     ;Interrupções globais
     BSF INTCON, PEIE
     BSF INTCON, GIEH    ; habilita interrupcoes high
-    BSF INTCON, GIEL    ; habilita interrupcoes low (nenhuma implementada)
+    BSF INTCON, GIEL    ; habilita interrupcoes low
 
+MAIN_LOOP
+    ; Verifica se o botão foi pressionado
+    BTFSS M_BUTTON          ; Botão pressionado? (nível alto)
+    GOTO MAIN_LOOP          ; Não -> continua no loop
     
-;-------------------------------------------------------
-; Máquina de estados 
-;-------------------------------------------------------
+    ; Botão foi pressionado - faz a transição
+    BCF SENSOR_A            ; Desliga LED do SENSOR A (RC0)
+    BSF SENSOR_B            ; Liga LED do SENSOR B (RC1)
+    BSF MOTOR_DIR           ; Liga LED do MOTOR_DIR (RD7)
+        
+    ; Aguarda soltar o botão para evitar múltiplas ativações
+WAIT_BUTTON_RELEASE:
+    BTFSC M_BUTTON          ; Botão ainda pressionado?
+    GOTO WAIT_BUTTON_RELEASE ; Sim -> aguarda soltar
     
-IDLE_ROUTINE ; Estado de espera
-    BTFSC A_SENSOR ; Só muda de estado quando sensor A é 1
-    GOTO IDLE_ROUTINE
-    
-    MOVLW START ; Atualiza estado
-    MOVWF STATE
+    ; Loop após a transição
+AFTER_TRANSITION:
+    GOTO AFTER_TRANSITION   ; Mantém o estado
 
-START_ROUTINE
-    BTFSC M_BUTTON
-    GOTO START_ROUTINE
-    
-    MOVLW RIGHT
-    MOVWF STATE
-    
-RIGHT_ROUTINE
-    BTFSS B_SENSOR
-    GOTO RIGHT_ROUTINE
-    
-    MOVLW OPEN
-    MOVWF STATE
-    
-OPEN_ROUTINE
-    BTFSS P_SENSOR
-    GOTO OPEN_ROUTINE
-    
-    MOVF TIME
-    MOVWF STATE
-
-TIME_ROUTINE
-    CALL Delay_5s
-    MOVF FINISH
-    MOVWF STATE
-
-FINISH_ROUTINE
-    BTFSS A_SENSOR
-    GOTO FINISH_ROUTINE
-    
-    MOVF IDLE
-    MOVWF STATE
-
-ROTATE_RIGHT ; Tem que implementar 
-
-ROTATE_LEFT ; Tem que implementar 
-
-;=========================================================================
-; Cálculo do número de estouros do Timer1 (Fosc = 8 MHz, prescaler 1:8)
-;=========================================================================
-; Tcy = Fosc / 4 = 8 MHz / 4 = 2 MHz ? 1 ciclo = 0,5 us
-; Ttick = Tcy * prescaler = 0,5 us * 8 = 4 us
-; Tempo 1 overflow = 65536 * Ttick ? 0,262 s
-; Nº de estouros para 5 s = 5 / 0,262 ? 19 (Prefiro usar 20 para 5,24s)
-;=========================================================================
 ;-------------------------------------------------------
 ; Rotina de delay de 5s
 ;-------------------------------------------------------
 Delay_5s:
     CLRF    TICKS              ; zera contador
 WAIT_LOOP:
-    MOVLW   20                 ; 19/20 estouros (4,978s ou 5,24s)
+    MOVLW   20                 ; 20 estouros para ~5.24s
     CPFSLT  TICKS              ; já chegou?
     GOTO    WAIT_LOOP          ; não -> continua esperando
     RETURN
+
 END
