@@ -145,11 +145,11 @@ ENDC
 #define P_SENSOR PORTC, 0
 #define A_SENSOR PORTC, 1
 #define B_SENSOR PORTC, 2
-#define GREEN_LED PORTA, 0
-#define YELLOW_LED PORTA, 1
-#define RED_LED PORTA, 2
-#define BLUE_LED PORTA, 3
-#define GATE PORTD, 0
+#define GREEN_LED LATA, 0
+#define YELLOW_LED LATA, 1
+#define RED_LED LATA, 2
+#define BLUE_LED LATA, 3
+#define GATE LATD, 0
  
 ;Define dos estados
 IDLE EQU 0
@@ -175,6 +175,13 @@ MAIN
     BCF TRISA, 1
     BCF TRISA, 2
     BCF TRISA, 3
+    
+    ; inicializa saídas
+    BCF LATA,0
+    BCF LATA,1
+    BCF LATA,2
+    BCF LATA,3
+    BCF LATD,0
     
     ; Inicializacao da máquina de estados
     MOVLW IDLE
@@ -238,8 +245,15 @@ MAIN
 ; Máquina de estados 
 ;-------------------------------------------------------
     
-IDLE_ROUTINE ; Estado de espera: carro andando até ativar A
+IDLE_ROUTINE ; Carro andando até sensor A = 1
+    ; LEDs
     BSF GREEN_LED
+    BCF YELLOW_LED
+    BCF BLUE_LED
+    BCF RED_LED
+    
+    BCF GATE ; Comporta fechada
+    
     BTFSC   A_SENSOR
     GOTO    IDLE_REACHED
     GOTO    MAIN_LOOP
@@ -247,47 +261,88 @@ IDLE_ROUTINE ; Estado de espera: carro andando até ativar A
 IDLE_REACHED
     MOVLW START
     MOVWF STATE
-    BCF GREEN_LED
     GOTO MAIN_LOOP
 
-START_ROUTINE ; A igual 1, espera botão M ser pressionado (nível 0)
+START_ROUTINE ; Espera pressionar o botão M
+    ; LEDs
+    BSF GREEN_LED
+    BCF YELLOW_LED
+    BCF BLUE_LED
+    BCF RED_LED
+
+    BCF GATE  ; Comporta fechada
+
     ; botão M = 0 para começar
-    BSF YELLOW_LED
     BTFSC M_BUTTON
     GOTO MAIN_LOOP        ; se M = 1 continua esperando
+
+    ; Botão pressionado -> entra em RIGHT
     MOVLW RIGHT
     MOVWF STATE
     GOTO MAIN_LOOP
 
-RIGHT_ROUTINE; mover até sensor B ser ativado
+RIGHT_ROUTINE ; Espera sensor B = 1
+    ; LEDs
+    BCF GREEN_LED
+    BSF YELLOW_LED
+    BCF BLUE_LED
+    BCF RED_LED
+
+    BCF GATE ; Comporta fechada
+    
+    ; B = 1 -> transita para OPEN
     BTFSS B_SENSOR
-    GOTO MAIN_LOOP        ; B não foi acionado ainda
-    ; B acionado
+    GOTO MAIN_LOOP        ; B = 0 -> permanece em RIGHT
     MOVLW OPEN
     MOVWF STATE
-    BSF     GATE       ; GATE = 1 (abre)
     GOTO MAIN_LOOP
 
-OPEN_ROUTINE ; Abre comporta e espera P=1
-    BTFSS   P_SENSOR        ; skip se P=1
-    GOTO    MAIN_LOOP      
-    ; P=1 -> fecha comporta
-    BCF     GATE
-    MOVLW   TIME
-    MOVWF   STATE
-    BCF YELLOW_LED
-    GOTO    MAIN_LOOP
-
-TIME_ROUTINE
-    BSF BLUE_LED
-    CALL Delay_5s ; delay de 5s
+OPEN_ROUTINE ; Abre a comporta e espera sensor P = 1
+    ; LEDs
+    BCF GREEN_LED
+    BSF YELLOW_LED
     BCF BLUE_LED
+    BCF RED_LED
+
+    ; Abre a comporta (uma vez)
+    BSF GATE
+    ;Leve delay antes de checar sensor P
+    NOP
+    NOP
+    NOP
+
+    ; Espera P=1
+    BTFSS P_SENSOR
+    GOTO MAIN_LOOP
+
+    ; P=1 detectado -> fecha comporta e vai para TIME
+    BCF GATE
+    MOVLW TIME
+    MOVWF STATE
+    GOTO MAIN_LOOP
+
+
+TIME_ROUTINE ; Espera 5s
+    ; LEDs
+    BCF GREEN_LED
+    BCF YELLOW_LED
+    BSF BLUE_LED
+    BCF RED_LED
+
+    BCF GATE ; Comporta fechada
+    CALL Delay_5s ; delay de 5s
     MOVLW FINISH
     MOVWF STATE
     GOTO MAIN_LOOP
 
-FINISH_ROUTINE
+FINISH_ROUTINE ; Espera B = 0
+    ; LEDs
+    BCF GREEN_LED
+    BCF YELLOW_LED
+    BCF BLUE_LED
     BSF RED_LED
+
+    BCF GATE ; Comporta fechada
     ; Aguarda sensor B = 0 para completar ciclo
     BTFSS   B_SENSOR
     GOTO    FINISH_REACHED
@@ -296,8 +351,8 @@ FINISH_ROUTINE
 FINISH_REACHED
     MOVLW IDLE
     MOVWF STATE
-    BCF RED_LED
     GOTO MAIN_LOOP
+    
 ;-------------------------------------------------------
 ; Rotinas de rotação 
 ;-------------------------------------------------------

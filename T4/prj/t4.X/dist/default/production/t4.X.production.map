@@ -1,5 +1,5 @@
 MPLINK 5.09, LINKER
-Linker Map File - Created Fri Sep 26 00:35:38 2025
+Linker Map File - Created Fri Sep 26 14:03:57 2025
 
                                  Section Info
                   Section       Type    Address   Location Size(Bytes)
@@ -9,8 +9,8 @@ Linker Map File - Created Fri Sep 26 00:35:38 2025
                      ISRL       code   0x000006    program   0x000002
                     ISRHV       code   0x000008    program   0x000004
                     ISRLV       code   0x000018    program   0x000004
-                MAIN_PROG       code   0x00001c    program   0x0000f4
-                     ISRH       code   0x000110    program   0x000020
+                MAIN_PROG       code   0x00001c    program   0x00012e
+                     ISRH       code   0x00014a    program   0x000020
 .config_300000_BUILD/DEFAULT/PRODUCTION/_EXT/14    romdata   0x300000    program   0x000001
 .config_300001_BUILD/DEFAULT/PRODUCTION/_EXT/14    romdata   0x300001    program   0x000001
 .config_300002_BUILD/DEFAULT/PRODUCTION/_EXT/14    romdata   0x300002    program   0x000001
@@ -30,34 +30,34 @@ Linker Map File - Created Fri Sep 26 00:35:38 2025
                                Start         End      
                            ---------   ---------      
                             0x000000    0x00000b      
-                            0x000018    0x00012f      
+                            0x000018    0x000169      
                             0x300000    0x300003      
                             0x300005    0x300006      
                             0x300008    0x30000d      
-            304 out of 33048 program addresses used, program memory utilization is 0%
+            362 out of 33048 program addresses used, program memory utilization is 1%
 
 
 
                               Symbols - Sorted by Name
                      Name    Address   Location    Storage File                     
                 ---------  ---------  ---------  --------- ---------                
-                 Delay_5s   0x000102    program     static ..\..\src\main.asm       
-           FINISH_REACHED   0x0000f4    program     static ..\..\src\main.asm       
-           FINISH_ROUTINE   0x0000e8    program     static ..\..\src\main.asm       
-                 HIGH_ISR   0x000110    program     static ..\..\src\main.asm       
-             IDLE_REACHED   0x00009c    program     static ..\..\src\main.asm       
-             IDLE_ROUTINE   0x000090    program     static ..\..\src\main.asm       
+                 Delay_5s   0x00013c    program     static ..\..\src\main.asm       
+           FINISH_REACHED   0x000130    program     static ..\..\src\main.asm       
+           FINISH_ROUTINE   0x00011c    program     static ..\..\src\main.asm       
+                 HIGH_ISR   0x00014a    program     static ..\..\src\main.asm       
+             IDLE_REACHED   0x0000ae    program     static ..\..\src\main.asm       
+             IDLE_ROUTINE   0x00009a    program     static ..\..\src\main.asm       
                   LOW_ISR   0x000006    program     static ..\..\src\main.asm       
                      MAIN   0x00001c    program     static ..\..\src\main.asm       
-                MAIN_LOOP   0x000050    program     static ..\..\src\main.asm       
-             OPEN_ROUTINE   0x0000c6    program     static ..\..\src\main.asm       
-            RIGHT_ROUTINE   0x0000b6    program     static ..\..\src\main.asm       
-              ROTATE_LEFT   0x000100    program     static ..\..\src\main.asm       
-             ROTATE_RIGHT   0x0000fe    program     static ..\..\src\main.asm       
-            START_ROUTINE   0x0000a6    program     static ..\..\src\main.asm       
-             TIME_ROUTINE   0x0000d8    program     static ..\..\src\main.asm       
-                WAIT_LOOP   0x000104    program     static ..\..\src\main.asm       
-           _HIGH_ISR_DONE   0x000124    program     static ..\..\src\main.asm       
+                MAIN_LOOP   0x00005a    program     static ..\..\src\main.asm       
+             OPEN_ROUTINE   0x0000e6    program     static ..\..\src\main.asm       
+            RIGHT_ROUTINE   0x0000ce    program     static ..\..\src\main.asm       
+              ROTATE_LEFT   0x00013a    program     static ..\..\src\main.asm       
+             ROTATE_RIGHT   0x000138    program     static ..\..\src\main.asm       
+            START_ROUTINE   0x0000b6    program     static ..\..\src\main.asm       
+             TIME_ROUTINE   0x000106    program     static ..\..\src\main.asm       
+                WAIT_LOOP   0x00013e    program     static ..\..\src\main.asm       
+           _HIGH_ISR_DONE   0x00015e    program     static ..\..\src\main.asm       
 
 
 
@@ -66,20 +66,20 @@ Linker Map File - Created Fri Sep 26 00:35:38 2025
                 ---------  ---------  ---------  --------- ---------                
                   LOW_ISR   0x000006    program     static ..\..\src\main.asm       
                      MAIN   0x00001c    program     static ..\..\src\main.asm       
-                MAIN_LOOP   0x000050    program     static ..\..\src\main.asm       
-             IDLE_ROUTINE   0x000090    program     static ..\..\src\main.asm       
-             IDLE_REACHED   0x00009c    program     static ..\..\src\main.asm       
-            START_ROUTINE   0x0000a6    program     static ..\..\src\main.asm       
-            RIGHT_ROUTINE   0x0000b6    program     static ..\..\src\main.asm       
-             OPEN_ROUTINE   0x0000c6    program     static ..\..\src\main.asm       
-             TIME_ROUTINE   0x0000d8    program     static ..\..\src\main.asm       
-           FINISH_ROUTINE   0x0000e8    program     static ..\..\src\main.asm       
-           FINISH_REACHED   0x0000f4    program     static ..\..\src\main.asm       
-             ROTATE_RIGHT   0x0000fe    program     static ..\..\src\main.asm       
-              ROTATE_LEFT   0x000100    program     static ..\..\src\main.asm       
-                 Delay_5s   0x000102    program     static ..\..\src\main.asm       
-                WAIT_LOOP   0x000104    program     static ..\..\src\main.asm       
-                 HIGH_ISR   0x000110    program     static ..\..\src\main.asm       
-           _HIGH_ISR_DONE   0x000124    program     static ..\..\src\main.asm       
+                MAIN_LOOP   0x00005a    program     static ..\..\src\main.asm       
+             IDLE_ROUTINE   0x00009a    program     static ..\..\src\main.asm       
+             IDLE_REACHED   0x0000ae    program     static ..\..\src\main.asm       
+            START_ROUTINE   0x0000b6    program     static ..\..\src\main.asm       
+            RIGHT_ROUTINE   0x0000ce    program     static ..\..\src\main.asm       
+             OPEN_ROUTINE   0x0000e6    program     static ..\..\src\main.asm       
+             TIME_ROUTINE   0x000106    program     static ..\..\src\main.asm       
+           FINISH_ROUTINE   0x00011c    program     static ..\..\src\main.asm       
+           FINISH_REACHED   0x000130    program     static ..\..\src\main.asm       
+             ROTATE_RIGHT   0x000138    program     static ..\..\src\main.asm       
+              ROTATE_LEFT   0x00013a    program     static ..\..\src\main.asm       
+                 Delay_5s   0x00013c    program     static ..\..\src\main.asm       
+                WAIT_LOOP   0x00013e    program     static ..\..\src\main.asm       
+                 HIGH_ISR   0x00014a    program     static ..\..\src\main.asm       
+           _HIGH_ISR_DONE   0x00015e    program     static ..\..\src\main.asm       
 
 
