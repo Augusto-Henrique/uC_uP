@@ -7,13 +7,14 @@
 ;                                                                              *
 ;*******************************************************************************
 ;                                                                              *
-;    Known Issues: N�o sei se funciona
+;    Known Issues: Sem debounce do botao M
 ;                                                                              *
 ;*******************************************************************************
 ;                                                                              *
 ;    Revision History:                                                         *
-;    23/09/2025 - Cria��o                                                      *
+;    23/09/2025 - Criação                                                      *
 ;    24/09/2025 - Estados adicionados e configurados                           *
+;    25/09/2025 - Estados alterados e simplificação                            *
 ;                                                                              *
 ;*******************************************************************************
 ;*******************************************************************************
@@ -27,7 +28,7 @@
   CONFIG  USBDIV = 1            ; USB Clock Selection bit (used in Full-Speed USB mode only; UCFG:FSEN = 1) (USB clock source comes directly from the primary oscillator block with no postscale)
 
 ; CONFIG1H
-  CONFIG  FOSC = XT_XT          ; Oscillator Selection bits (XT oscillator (XT))
+  CONFIG  FOSC = INTOSC_HS      ; Oscillator Selection bits (XT oscillator (XT))
   CONFIG  FCMEN = OFF           ; Fail-Safe Clock Monitor Enable bit (Fail-Safe Clock Monitor disabled)
   CONFIG  IESO = OFF            ; Internal/External Oscillator Switchover bit (Oscillator Switchover mode disabled)
 
@@ -102,13 +103,23 @@ ISRLV     CODE    0x0018
 ISRH      CODE                     
 
 HIGH_ISR
-    BTFSS   PIR1, TMR1IF       ; Timer1 estourou?
-    GOTO    NOT_TMR1
+    ; salvar contexto (WREG, STATUS, BSR)
+    MOVWF   SAVED_W
+    MOVFF   STATUS, SAVED_STATUS
+    MOVFF   BSR, SAVED_BSR
 
-    INCF    TICKS, F           ; conta n estouros
+    ; trata Timer1
+    BTFSS   PIR1, TMR1IF
+    GOTO    _HIGH_ISR_DONE
+
+    INCF    TICKS, F           ; conta estouros
     BCF     PIR1, TMR1IF       ; limpa flag
 
-NOT_TMR1
+_HIGH_ISR_DONE
+    ; restaurar contexto
+    MOVFF   SAVED_BSR, BSR
+    MOVFF   SAVED_STATUS, STATUS
+    MOVF    SAVED_W, W
     RETFIE FAST
 
 ISRL      CODE                     ; let linker place low ISR routine
@@ -122,8 +133,11 @@ LOW_ISR
 ; MAIN PROGRAM
 ;*******************************************************************************
 CBLOCK 0x20
-    STATE ;Variavel de estado
-    TICKS ;Variavel de contagem
+    STATE           ; Variavel de estado
+    TICKS           ; Variavel de contagem
+    SAVED_W         ; temporário para salvar WREG na ISR
+    SAVED_STATUS    ; temporário para salvar STATUS na ISR
+    SAVED_BSR       ; temporário para salvar BSR na ISR
 ENDC
 
 ;Define dos pinos
@@ -152,84 +166,146 @@ MAIN
     BSF TRISC, 0
     BSF TRISC, 1
     BSF TRISC, 2
-    BSF TRISD, 0
+    BCF TRISD, 0
     
-    ; Inicializacao da m�quina de estados
+    ; Inicializacao da máquina de estados
     MOVLW IDLE
     MOVWF STATE
     
-    ;Inicializa��o do timer1
+    ;Inicialização do timer1
     BSF RCON, IPEN      ; habilita prioridades
     CLRF T1CON
-    BSF T1CON, T1CKPS0  ; prescaler 1:8
-    BCF T1CON, T1CKPS1
+    ; prescaler 1:8 -> T1CKPS1:T1CKPS0 = 11
+    BSF T1CON, T1CKPS0
+    BSF T1CON, T1CKPS1
+    ; zera contador de TMR1 para transições previsíveis
+    CLRF TMR1L
+    CLRF TMR1H
     BSF T1CON, TMR1ON   ; liga Timer1
 
     CLRF PIR1
     BSF PIE1, TMR1IE    ; habilita interrupcao Timer1
     BSF IPR1, TMR1IP    ; coloca Timer1 em alta prioridade
     
-    ;Interrup��es globais
+    ;Interrupções globais
     BSF INTCON, PEIE
     BSF INTCON, GIEH    ; habilita interrupcoes high
     BSF INTCON, GIEL    ; habilita interrupcoes low (nenhuma implementada)
 
-    
-;-------------------------------------------------------
-; M�quina de estados 
-;-------------------------------------------------------
-    
-IDLE_ROUTINE ; Estado de espera
-    BTFSC A_SENSOR ; S� muda de estado quando sensor A � 1
+  MAIN_LOOP
+    ; Troca simples de estados
+    MOVF STATE, W
+    XORLW IDLE
+    BTFSC STATUS, Z
     GOTO IDLE_ROUTINE
-    
-    MOVLW START ; Atualiza estado
-    MOVWF STATE
 
-START_ROUTINE
-    BTFSC M_BUTTON
+    MOVF STATE, W
+    XORLW START
+    BTFSC STATUS, Z
     GOTO START_ROUTINE
+
+    MOVF STATE, W
+    XORLW RIGHT
+    BTFSC STATUS, Z
+    GOTO RIGHT_ROUTINE
+
+    MOVF STATE, W
+    XORLW OPEN
+    BTFSC STATUS, Z
+    GOTO OPEN_ROUTINE
+
+    MOVF STATE, W
+    XORLW TIME
+    BTFSC STATUS, Z
+    GOTO TIME_ROUTINE
+
+    MOVF STATE, W
+    XORLW FINISH
+    BTFSC STATUS, Z
+    GOTO FINISH_ROUTINE
+
+    GOTO MAIN_LOOP
+
     
+;-------------------------------------------------------
+; Máquina de estados 
+;-------------------------------------------------------
+;-------------------------------------------------------
+; Máquina de estados 
+;-------------------------------------------------------
+    
+IDLE_ROUTINE ; Estado de espera: carro andando até ativar A
+    BTFSC   A_SENSOR
+    GOTO    IDLE_REACHED
+    GOTO    MAIN_LOOP
+
+IDLE_REACHED
+    MOVLW START
+    MOVWF STATE
+    GOTO MAIN_LOOP
+
+START_ROUTINE ; A igual 1, espera botão M ser pressionado (nível 0)
+    ; botão M = 0 para começar
+    BTFSC M_BUTTON
+    GOTO MAIN_LOOP        ; se M = 1 continua esperando
     MOVLW RIGHT
     MOVWF STATE
-    
-RIGHT_ROUTINE
+    GOTO MAIN_LOOP
+
+RIGHT_ROUTINE; mover até sensor B ser ativado
     BTFSS B_SENSOR
-    GOTO RIGHT_ROUTINE
-    
+    GOTO MAIN_LOOP        ; B não foi acionado ainda
+    ; B acionado
     MOVLW OPEN
     MOVWF STATE
-    
+    GOTO MAIN_LOOP
+
 OPEN_ROUTINE
-    BTFSS P_SENSOR
-    GOTO OPEN_ROUTINE
-    
-    MOVF TIME
+    ; abre comporta
+    BSF PORTD, 0          ; GATE = 1 (abre)
+    ; espera P_SENSOR indicar preenchimento
+    BTFSC P_SENSOR
+    GOTO MAIN_LOOP       
+    ; quando P_SENSOR = 1:
+    BCF PORTD, 0          ; fecha comporta
+    MOVLW TIME
     MOVWF STATE
+    GOTO MAIN_LOOP
 
 TIME_ROUTINE
-    CALL Delay_5s
-    MOVF FINISH
+    CALL Delay_5s ; delay de 5s
+    MOVLW FINISH
     MOVWF STATE
+    GOTO MAIN_LOOP
 
 FINISH_ROUTINE
-    BTFSS A_SENSOR
-    GOTO FINISH_ROUTINE
-    
-    MOVF IDLE
+    ; Aguarda sensor B = 0 para completar ciclo
+    BTFSS   B_SENSOR
+    GOTO    FINISH_REACHED
+    GOTO    MAIN_LOOP        ; B = 1 -> continua esperando
+
+FINISH_REACHED
+    MOVLW IDLE
     MOVWF STATE
+    GOTO MAIN_LOOP
+;-------------------------------------------------------
+; Rotinas de rotação 
+;-------------------------------------------------------
+; Rotinas de controle do motor (Não sei se é necessário)
+ROTATE_RIGHT
+    ; ...implementar controle do motor para ir à direita...
+    RETURN
 
-ROTATE_RIGHT ; Tem que implementar 
-
-ROTATE_LEFT ; Tem que implementar 
-
+ROTATE_LEFT
+    ; ...implementar controle do motor para ir à esquerda...
+    RETURN
 ;=========================================================================
-; C�lculo do n�mero de estouros do Timer1 (Fosc = 8 MHz, prescaler 1:8)
+; Cálculo do número de estouros do Timer1 (Fosc = 8 MHz, prescaler 1:8)
 ;=========================================================================
 ; Tcy = Fosc / 4 = 8 MHz / 4 = 2 MHz ? 1 ciclo = 0,5 us
 ; Ttick = Tcy * prescaler = 0,5 us * 8 = 4 us
 ; Tempo 1 overflow = 65536 * Ttick ? 0,262 s
-; N� de estouros para 5 s = 5 / 0,262 ? 19 (Prefiro usar 20 para 5,24s)
+; Nº de estouros para 5 s = 5 / 0,262 ? 19 (Prefiro usar 20 para 5,24s)
 ;=========================================================================
 ;-------------------------------------------------------
 ; Rotina de delay de 5s
@@ -237,8 +313,9 @@ ROTATE_LEFT ; Tem que implementar
 Delay_5s:
     CLRF    TICKS              ; zera contador
 WAIT_LOOP:
-    MOVLW   20                 ; 19/20 estouros (4,978s ou 5,24s)
-    CPFSLT  TICKS              ; j� chegou?
-    GOTO    WAIT_LOOP          ; n�o -> continua esperando
+    MOVF    TICKS, W
+    XORLW   20                 ; Z=1 quando TICKS == 20
+    BTFSS   STATUS, Z          ; se Z=0 -> executa GOTO WAIT_LOOP
+    GOTO    WAIT_LOOP
     RETURN
 END
