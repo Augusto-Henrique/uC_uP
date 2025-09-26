@@ -12,9 +12,9 @@
 ;*******************************************************************************
 ;                                                                              *
 ;    Revision History:                                                         *
-;    23/09/2025 - CriaÃ§Ã£o                                                      *
+;    23/09/2025 - Criação                                                      *
 ;    24/09/2025 - Estados adicionados e configurados                           *
-;    25/09/2025 - Estados alterados e simplificaÃ§Ã£o                            *
+;    25/09/2025 - Estados alterados e simplificação                            *
 ;                                                                              *
 ;*******************************************************************************
 ;*******************************************************************************
@@ -135,9 +135,9 @@ LOW_ISR
 CBLOCK 0x20
     STATE           ; Variavel de estado
     TICKS           ; Variavel de contagem
-    SAVED_W         ; temporÃ¡rio para salvar WREG na ISR
-    SAVED_STATUS    ; temporÃ¡rio para salvar STATUS na ISR
-    SAVED_BSR       ; temporÃ¡rio para salvar BSR na ISR
+    SAVED_W         ; temporário para salvar WREG na ISR
+    SAVED_STATUS    ; temporário para salvar STATUS na ISR
+    SAVED_BSR       ; temporário para salvar BSR na ISR
 ENDC
 
 ;Define dos pinos
@@ -145,6 +145,10 @@ ENDC
 #define P_SENSOR PORTC, 0
 #define A_SENSOR PORTC, 1
 #define B_SENSOR PORTC, 2
+#define GREEN_LED PORTA, 0
+#define YELLOW_LED PORTA, 1
+#define RED_LED PORTA, 2
+#define BLUE_LED PORTA, 3
 #define GATE PORTD, 0
  
 ;Define dos estados
@@ -167,18 +171,22 @@ MAIN
     BSF TRISC, 1
     BSF TRISC, 2
     BCF TRISD, 0
+    BCF TRISA, 0
+    BCF TRISA, 1
+    BCF TRISA, 2
+    BCF TRISA, 3
     
-    ; Inicializacao da mÃ¡quina de estados
+    ; Inicializacao da máquina de estados
     MOVLW IDLE
     MOVWF STATE
     
-    ;InicializaÃ§Ã£o do timer1
+    ;Inicialização do timer1
     BSF RCON, IPEN      ; habilita prioridades
     CLRF T1CON
     ; prescaler 1:8 -> T1CKPS1:T1CKPS0 = 11
     BSF T1CON, T1CKPS0
     BSF T1CON, T1CKPS1
-    ; zera contador de TMR1 para transiÃ§Ãµes previsÃ­veis
+    ; zera contador de TMR1 para transições previsíveis
     CLRF TMR1L
     CLRF TMR1H
     BSF T1CON, TMR1ON   ; liga Timer1
@@ -187,7 +195,7 @@ MAIN
     BSF PIE1, TMR1IE    ; habilita interrupcao Timer1
     BSF IPR1, TMR1IP    ; coloca Timer1 em alta prioridade
     
-    ;InterrupÃ§Ãµes globais
+    ;Interrupções globais
     BSF INTCON, PEIE
     BSF INTCON, GIEH    ; habilita interrupcoes high
     BSF INTCON, GIEL    ; habilita interrupcoes low (nenhuma implementada)
@@ -226,15 +234,12 @@ MAIN
 
     GOTO MAIN_LOOP
 
-    
 ;-------------------------------------------------------
-; MÃ¡quina de estados 
-;-------------------------------------------------------
-;-------------------------------------------------------
-; MÃ¡quina de estados 
+; Máquina de estados 
 ;-------------------------------------------------------
     
-IDLE_ROUTINE ; Estado de espera: carro andando atÃ© ativar A
+IDLE_ROUTINE ; Estado de espera: carro andando até ativar A
+    BSF GREEN_LED
     BTFSC   A_SENSOR
     GOTO    IDLE_REACHED
     GOTO    MAIN_LOOP
@@ -242,43 +247,47 @@ IDLE_ROUTINE ; Estado de espera: carro andando atÃ© ativar A
 IDLE_REACHED
     MOVLW START
     MOVWF STATE
+    BCF GREEN_LED
     GOTO MAIN_LOOP
 
-START_ROUTINE ; A igual 1, espera botÃ£o M ser pressionado (nÃ­vel 0)
-    ; botÃ£o M = 0 para comeÃ§ar
+START_ROUTINE ; A igual 1, espera botão M ser pressionado (nível 0)
+    ; botão M = 0 para começar
+    BSF YELLOW_LED
     BTFSC M_BUTTON
     GOTO MAIN_LOOP        ; se M = 1 continua esperando
     MOVLW RIGHT
     MOVWF STATE
     GOTO MAIN_LOOP
 
-RIGHT_ROUTINE; mover atÃ© sensor B ser ativado
+RIGHT_ROUTINE; mover até sensor B ser ativado
     BTFSS B_SENSOR
-    GOTO MAIN_LOOP        ; B nÃ£o foi acionado ainda
+    GOTO MAIN_LOOP        ; B não foi acionado ainda
     ; B acionado
     MOVLW OPEN
     MOVWF STATE
+    BSF     GATE       ; GATE = 1 (abre)
     GOTO MAIN_LOOP
 
-OPEN_ROUTINE
-    ; abre comporta
-    BSF PORTD, 0          ; GATE = 1 (abre)
-    ; espera P_SENSOR indicar preenchimento
-    BTFSC P_SENSOR
-    GOTO MAIN_LOOP       
-    ; quando P_SENSOR = 1:
-    BCF PORTD, 0          ; fecha comporta
-    MOVLW TIME
-    MOVWF STATE
-    GOTO MAIN_LOOP
+OPEN_ROUTINE ; Abre comporta e espera P=1
+    BTFSS   P_SENSOR        ; skip se P=1
+    GOTO    MAIN_LOOP      
+    ; P=1 -> fecha comporta
+    BCF     GATE
+    MOVLW   TIME
+    MOVWF   STATE
+    BCF YELLOW_LED
+    GOTO    MAIN_LOOP
 
 TIME_ROUTINE
+    BSF BLUE_LED
     CALL Delay_5s ; delay de 5s
+    BCF BLUE_LED
     MOVLW FINISH
     MOVWF STATE
     GOTO MAIN_LOOP
 
 FINISH_ROUTINE
+    BSF RED_LED
     ; Aguarda sensor B = 0 para completar ciclo
     BTFSS   B_SENSOR
     GOTO    FINISH_REACHED
@@ -287,25 +296,26 @@ FINISH_ROUTINE
 FINISH_REACHED
     MOVLW IDLE
     MOVWF STATE
+    BCF RED_LED
     GOTO MAIN_LOOP
 ;-------------------------------------------------------
-; Rotinas de rotaÃ§Ã£o 
+; Rotinas de rotação 
 ;-------------------------------------------------------
-; Rotinas de controle do motor (NÃ£o sei se Ã© necessÃ¡rio)
+; Rotinas de controle do motor (Não sei se é necessário)
 ROTATE_RIGHT
-    ; ...implementar controle do motor para ir Ã  direita...
+    ; ...implementar controle do motor para ir à direita...
     RETURN
 
 ROTATE_LEFT
-    ; ...implementar controle do motor para ir Ã  esquerda...
+    ; ...implementar controle do motor para ir à esquerda...
     RETURN
 ;=========================================================================
-; CÃ¡lculo do nÃºmero de estouros do Timer1 (Fosc = 8 MHz, prescaler 1:8)
+; Cálculo do número de estouros do Timer1 (Fosc = 8 MHz, prescaler 1:8)
 ;=========================================================================
 ; Tcy = Fosc / 4 = 8 MHz / 4 = 2 MHz ? 1 ciclo = 0,5 us
 ; Ttick = Tcy * prescaler = 0,5 us * 8 = 4 us
 ; Tempo 1 overflow = 65536 * Ttick ? 0,262 s
-; NÂº de estouros para 5 s = 5 / 0,262 ? 19 (Prefiro usar 20 para 5,24s)
+; Nº de estouros para 5 s = 5 / 0,262 ? 19 (Prefiro usar 20 para 5,24s)
 ;=========================================================================
 ;-------------------------------------------------------
 ; Rotina de delay de 5s
