@@ -142,14 +142,14 @@ ENDC
 
 ;Define dos pinos
 #define M_BUTTON PORTB, 0
-#define P_SENSOR PORTC, 0
-#define A_SENSOR PORTC, 1
-#define B_SENSOR PORTC, 2
+#define P_SENSOR PORTC, 2
+#define A_SENSOR PORTC, 0
+#define B_SENSOR PORTC, 1
 #define GREEN_LED LATA, 0
 #define YELLOW_LED LATA, 1
 #define RED_LED LATA, 2
 #define BLUE_LED LATA, 3
-#define GATE LATD, 0
+#define GATE LATE, 0
  
 ;Define dos estados
 IDLE EQU 0
@@ -170,18 +170,23 @@ MAIN
     BSF TRISC, 0
     BSF TRISC, 1
     BSF TRISC, 2
-    BCF TRISD, 0
+    BCF TRISE, 0
     BCF TRISA, 0
     BCF TRISA, 1
     BCF TRISA, 2
     BCF TRISA, 3
+    
+    BCF TRISD, 0
+    BCF TRISD, 1
+    BCF TRISD, 2
+    BCF TRISD, 3
     
     ; inicializa saídas
     BCF LATA,0
     BCF LATA,1
     BCF LATA,2
     BCF LATA,3
-    BCF LATD,0
+    BCF LATE,0
     
     ; Inicializacao da máquina de estados
     MOVLW IDLE
@@ -289,6 +294,7 @@ RIGHT_ROUTINE ; Espera sensor B = 1
     BCF RED_LED
 
     BCF GATE ; Comporta fechada
+    CALL ROTATE_RIGHT
     
     ; B = 1 -> transita para OPEN
     BTFSS B_SENSOR
@@ -305,6 +311,7 @@ OPEN_ROUTINE ; Abre a comporta e espera sensor P = 1
     BCF RED_LED
 
     ; Abre a comporta (uma vez)
+    CALL Delay_5ms
     BSF GATE
     ;Leve delay antes de checar sensor P
     NOP
@@ -344,6 +351,8 @@ FINISH_ROUTINE ; Espera B = 0
 
     BCF GATE ; Comporta fechada
     ; Aguarda sensor B = 0 para completar ciclo
+    CALL ROTATE_LEFT
+    
     BTFSS   B_SENSOR
     GOTO    FINISH_REACHED
     GOTO    MAIN_LOOP        ; B = 1 -> continua esperando
@@ -354,15 +363,43 @@ FINISH_REACHED
     GOTO MAIN_LOOP
     
 ;-------------------------------------------------------
-; Rotinas de rotação 
+; Rotinas de rotação do motor
 ;-------------------------------------------------------
-; Rotinas de controle do motor (Não sei se é necessário)
 ROTATE_RIGHT
-    ; ...implementar controle do motor para ir à direita...
+    MOVLW   0xF1           ; 0x01 (0001)
+    MOVWF   LATD
+    CALL    Delay_5ms
+    
+    MOVLW   0xF4           ; 0x04 (0100)  
+    MOVWF   LATD
+    CALL    Delay_5ms
+    
+    MOVLW   0xF2           ; 0x02 (0010)
+    MOVWF   LATD
+    CALL    Delay_5ms
+    
+    MOVLW   0xF8           ; 0x08 (1000)
+    MOVWF   LATD
+    CALL    Delay_5ms
     RETURN
 
 ROTATE_LEFT
-    ; ...implementar controle do motor para ir à esquerda...
+   MOVLW   0x08
+    MOVWF   LATD
+    CALL    Delay_5ms
+    
+    MOVLW   0x02  
+    MOVWF   LATD
+    CALL    Delay_5ms
+    
+    MOVLW   0x04
+    MOVWF   LATD
+    CALL    Delay_5ms
+    
+    MOVLW   0x01
+    MOVWF   LATD
+    CALL    Delay_5ms
+    
     RETURN
 ;=========================================================================
 ; Cálculo do número de estouros do Timer1 (Fosc = 8 MHz, prescaler 1:8)
@@ -383,4 +420,23 @@ WAIT_LOOP:
     BTFSS   STATUS, Z          ; se Z=0 -> executa GOTO WAIT_LOOP
     GOTO    WAIT_LOOP
     RETURN
+
+;-------------------------------------------------------
+; Rotina de delay para o motor
+;-------------------------------------------------------
+Delay_5ms:
+    MOVLW   0x1F              ; Loop externo - valor reduzido
+    MOVWF   0x40              ; Contador externo (usando endereço 0x40)
+Delay_Outer_5ms:
+    MOVLW   0x4F              ; Loop interno - valor reduzido  
+    MOVWF   0x41              ; Contador interno (usando endereço 0x41)
+Delay_Inner_5ms:
+    NOP                       ; 1 ciclo
+    NOP                       ; 1 ciclo
+    DECFSZ  0x41, F           ; Decrementa contador interno
+    GOTO    Delay_Inner_5ms   ; Continua loop interno
+    DECFSZ  0x40, F           ; Decrementa contador externo
+    GOTO    Delay_Outer_5ms   ; Continua loop externo
+    RETURN
+
 END

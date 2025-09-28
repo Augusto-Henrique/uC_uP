@@ -1,4 +1,4 @@
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE  1
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE  1
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -57,7 +57,7 @@ LOC  OBJECT CODE     LINE SOURCE TEXT
                       00037   CONFIG  BOR = OFF             ; Brown-out Reset Enable bits (Brown-out Reset disabled in hardware and 
                             software)
                       00038   CONFIG  BORV = 0              ; Brown-out Reset Voltage bits (Maximum setting 4.59V)
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE  2
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE  2
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -116,7 +116,7 @@ LOC  OBJECT CODE     LINE SOURCE TEXT
                             table reads executed in other blocks)
                       00080   CONFIG  EBTR1 = ON            ; Table Read Protection bit (Block 1 (002000-003FFFh) is protected from 
                             table reads executed in other blocks)
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE  3
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE  3
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -175,7 +175,7 @@ LOC  OBJECT CODE     LINE SOURCE TEXT
                       00128 ;       <Search the device datasheet for 'context' and copy interrupt
                       00129 ;       context saving code here>
 000000 0010           00130     RETFIE
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE  4
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE  4
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -197,14 +197,14 @@ Warning[205]: Found directive in column 1. (ENDC)
                       00142 
                       00143 ;Define dos pinos
                       00144 #define M_BUTTON PORTB, 0
-                      00145 #define P_SENSOR PORTC, 0
-                      00146 #define A_SENSOR PORTC, 1
-                      00147 #define B_SENSOR PORTC, 2
+                      00145 #define P_SENSOR PORTC, 2
+                      00146 #define A_SENSOR PORTC, 0
+                      00147 #define B_SENSOR PORTC, 1
                       00148 #define GREEN_LED LATA, 0
                       00149 #define YELLOW_LED LATA, 1
                       00150 #define RED_LED LATA, 2
                       00151 #define BLUE_LED LATA, 3
-                      00152 #define GATE LATD, 0
+                      00152 #define GATE LATE, 0
                       00153  
                       00154 ;Define dos estados
   00000000            00155 IDLE EQU 0
@@ -225,247 +225,309 @@ Warning[205]: Found directive in column 1. (ENDC)
 000006 8094           00170     BSF TRISC, 0
 000008 8294           00171     BSF TRISC, 1
 00000A 8494           00172     BSF TRISC, 2
-00000C 9095           00173     BCF TRISD, 0
+00000C 9096           00173     BCF TRISE, 0
 00000E 9092           00174     BCF TRISA, 0
 000010 9292           00175     BCF TRISA, 1
 000012 9492           00176     BCF TRISA, 2
 000014 9692           00177     BCF TRISA, 3
                       00178     
-                      00179     ; inicializa saídas
-000016 9089           00180     BCF LATA,0
-000018 9289           00181     BCF LATA,1
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE  5
+000016 9095           00179     BCF TRISD, 0
+000018 9295           00180     BCF TRISD, 1
+00001A 9495           00181     BCF TRISD, 2
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE  5
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-00001A 9489           00182     BCF LATA,2
-00001C 9689           00183     BCF LATA,3
-00001E 908C           00184     BCF LATD,0
-                      00185     
-                      00186     ; Inicializacao da máquina de estados
-000020 0E00           00187     MOVLW IDLE
-000022 6E20           00188     MOVWF STATE
-                      00189     
-                      00190     ;Inicialização do timer1
-000024 8ED0           00191     BSF RCON, IPEN      ; habilita prioridades
-000026 6ACD           00192     CLRF T1CON
-                      00193     ; prescaler 1:8 -> T1CKPS1:T1CKPS0 = 11
-000028 88CD           00194     BSF T1CON, T1CKPS0
-00002A 8ACD           00195     BSF T1CON, T1CKPS1
-                      00196     ; zera contador de TMR1 para transições previsíveis
-00002C 6ACE           00197     CLRF TMR1L
-00002E 6ACF           00198     CLRF TMR1H
-000030 80CD           00199     BSF T1CON, TMR1ON   ; liga Timer1
-                      00200 
-000032 6A9E           00201     CLRF PIR1
-000034 809D           00202     BSF PIE1, TMR1IE    ; habilita interrupcao Timer1
-000036 809F           00203     BSF IPR1, TMR1IP    ; coloca Timer1 em alta prioridade
-                      00204     
-                      00205     ;Interrupções globais
-000038 8CF2           00206     BSF INTCON, PEIE
-00003A 8EF2           00207     BSF INTCON, GIEH    ; habilita interrupcoes high
-00003C 8CF2           00208     BSF INTCON, GIEL    ; habilita interrupcoes low (nenhuma implementada)
-                      00209 
+00001C 9695           00182     BCF TRISD, 3
+                      00183     
+                      00184     ; inicializa saídas
+00001E 9089           00185     BCF LATA,0
+000020 9289           00186     BCF LATA,1
+000022 9489           00187     BCF LATA,2
+000024 9689           00188     BCF LATA,3
+000026 908D           00189     BCF LATE,0
+                      00190     
+                      00191     ; Inicializacao da máquina de estados
+000028 0E00           00192     MOVLW IDLE
+00002A 6E20           00193     MOVWF STATE
+                      00194     
+                      00195     ;Inicialização do timer1
+00002C 8ED0           00196     BSF RCON, IPEN      ; habilita prioridades
+00002E 6ACD           00197     CLRF T1CON
+                      00198     ; prescaler 1:8 -> T1CKPS1:T1CKPS0 = 11
+000030 88CD           00199     BSF T1CON, T1CKPS0
+000032 8ACD           00200     BSF T1CON, T1CKPS1
+                      00201     ; zera contador de TMR1 para transições previsíveis
+000034 6ACE           00202     CLRF TMR1L
+000036 6ACF           00203     CLRF TMR1H
+000038 80CD           00204     BSF T1CON, TMR1ON   ; liga Timer1
+                      00205 
+00003A 6A9E           00206     CLRF PIR1
+00003C 809D           00207     BSF PIE1, TMR1IE    ; habilita interrupcao Timer1
+00003E 809F           00208     BSF IPR1, TMR1IP    ; coloca Timer1 em alta prioridade
+                      00209     
+                      00210     ;Interrupções globais
+000040 8CF2           00211     BSF INTCON, PEIE
+000042 8EF2           00212     BSF INTCON, GIEH    ; habilita interrupcoes high
+000044 8CF2           00213     BSF INTCON, GIEL    ; habilita interrupcoes low (nenhuma implementada)
+                      00214 
 Warning[207]: Found label after column 1. (MAIN_LOOP)
-00003E                00210   MAIN_LOOP
-                      00211     ; Troca simples de estados
-00003E 5020           00212     MOVF STATE, W
-000040 0A00           00213     XORLW IDLE
-000042 B4D8           00214     BTFSC STATUS, Z
-000044 EF?? F???      00215     GOTO IDLE_ROUTINE
-                      00216 
-000048 5020           00217     MOVF STATE, W
-00004A 0A01           00218     XORLW START
-00004C B4D8           00219     BTFSC STATUS, Z
-00004E EF?? F???      00220     GOTO START_ROUTINE
+000046                00215   MAIN_LOOP
+                      00216     ; Troca simples de estados
+000046 5020           00217     MOVF STATE, W
+000048 0A00           00218     XORLW IDLE
+00004A B4D8           00219     BTFSC STATUS, Z
+00004C EF?? F???      00220     GOTO IDLE_ROUTINE
                       00221 
-000052 5020           00222     MOVF STATE, W
-000054 0A02           00223     XORLW RIGHT
-000056 B4D8           00224     BTFSC STATUS, Z
-000058 EF?? F???      00225     GOTO RIGHT_ROUTINE
+000050 5020           00222     MOVF STATE, W
+000052 0A01           00223     XORLW START
+000054 B4D8           00224     BTFSC STATUS, Z
+000056 EF?? F???      00225     GOTO START_ROUTINE
                       00226 
-00005C 5020           00227     MOVF STATE, W
-00005E 0A03           00228     XORLW OPEN
-000060 B4D8           00229     BTFSC STATUS, Z
-000062 EF?? F???      00230     GOTO OPEN_ROUTINE
+00005A 5020           00227     MOVF STATE, W
+00005C 0A02           00228     XORLW RIGHT
+00005E B4D8           00229     BTFSC STATUS, Z
+000060 EF?? F???      00230     GOTO RIGHT_ROUTINE
                       00231 
-000066 5020           00232     MOVF STATE, W
-000068 0A04           00233     XORLW TIME
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE  6
+000064 5020           00232     MOVF STATE, W
+000066 0A03           00233     XORLW OPEN
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE  6
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-00006A B4D8           00234     BTFSC STATUS, Z
-00006C EF?? F???      00235     GOTO TIME_ROUTINE
+000068 B4D8           00234     BTFSC STATUS, Z
+00006A EF?? F???      00235     GOTO OPEN_ROUTINE
                       00236 
-000070 5020           00237     MOVF STATE, W
-000072 0A05           00238     XORLW FINISH
-000074 B4D8           00239     BTFSC STATUS, Z
-000076 EF?? F???      00240     GOTO FINISH_ROUTINE
+00006E 5020           00237     MOVF STATE, W
+000070 0A04           00238     XORLW TIME
+000072 B4D8           00239     BTFSC STATUS, Z
+000074 EF?? F???      00240     GOTO TIME_ROUTINE
                       00241 
-00007A EF?? F???      00242     GOTO MAIN_LOOP
-                      00243 
-                      00244 ;-------------------------------------------------------
-                      00245 ; Máquina de estados 
-                      00246 ;-------------------------------------------------------
-                      00247     
-00007E                00248 IDLE_ROUTINE ; Carro andando até sensor A = 1
-                      00249     ; LEDs
-00007E 8089           00250     BSF GREEN_LED
-000080 9289           00251     BCF YELLOW_LED
-000082 9689           00252     BCF BLUE_LED
-000084 9489           00253     BCF RED_LED
-                      00254     
-000086 908C           00255     BCF GATE ; Comporta fechada
-                      00256     
-000088 B282           00257     BTFSC   A_SENSOR
-00008A EF?? F???      00258     GOTO    IDLE_REACHED
-00008E EF?? F???      00259     GOTO    MAIN_LOOP
-                      00260 
-000092                00261 IDLE_REACHED
-000092 0E01           00262     MOVLW START
-000094 6E20           00263     MOVWF STATE
-000096 EF?? F???      00264     GOTO MAIN_LOOP
+000078 5020           00242     MOVF STATE, W
+00007A 0A05           00243     XORLW FINISH
+00007C B4D8           00244     BTFSC STATUS, Z
+00007E EF?? F???      00245     GOTO FINISH_ROUTINE
+                      00246 
+000082 EF?? F???      00247     GOTO MAIN_LOOP
+                      00248 
+                      00249 ;-------------------------------------------------------
+                      00250 ; Máquina de estados 
+                      00251 ;-------------------------------------------------------
+                      00252     
+000086                00253 IDLE_ROUTINE ; Carro andando até sensor A = 1
+                      00254     ; LEDs
+000086 8089           00255     BSF GREEN_LED
+000088 9289           00256     BCF YELLOW_LED
+00008A 9689           00257     BCF BLUE_LED
+00008C 9489           00258     BCF RED_LED
+                      00259     
+00008E 908D           00260     BCF GATE ; Comporta fechada
+                      00261     
+000090 B082           00262     BTFSC   A_SENSOR
+000092 EF?? F???      00263     GOTO    IDLE_REACHED
+000096 EF?? F???      00264     GOTO    MAIN_LOOP
                       00265 
-00009A                00266 START_ROUTINE ; Espera pressionar o botão M
-                      00267     ; LEDs
-00009A 8089           00268     BSF GREEN_LED
-00009C 9289           00269     BCF YELLOW_LED
-00009E 9689           00270     BCF BLUE_LED
-0000A0 9489           00271     BCF RED_LED
-                      00272 
-0000A2 908C           00273     BCF GATE  ; Comporta fechada
-                      00274 
-                      00275     ; botão M = 0 para começar
-0000A4 B081           00276     BTFSC M_BUTTON
-0000A6 EF?? F???      00277     GOTO MAIN_LOOP        ; se M = 1 continua esperando
-                      00278 
-                      00279     ; Botão pressionado -> entra em RIGHT
-0000AA 0E02           00280     MOVLW RIGHT
-0000AC 6E20           00281     MOVWF STATE
-0000AE EF?? F???      00282     GOTO MAIN_LOOP
+00009A                00266 IDLE_REACHED
+00009A 0E01           00267     MOVLW START
+00009C 6E20           00268     MOVWF STATE
+00009E EF?? F???      00269     GOTO MAIN_LOOP
+                      00270 
+0000A2                00271 START_ROUTINE ; Espera pressionar o botão M
+                      00272     ; LEDs
+0000A2 8089           00273     BSF GREEN_LED
+0000A4 9289           00274     BCF YELLOW_LED
+0000A6 9689           00275     BCF BLUE_LED
+0000A8 9489           00276     BCF RED_LED
+                      00277 
+0000AA 908D           00278     BCF GATE  ; Comporta fechada
+                      00279 
+                      00280     ; botão M = 0 para começar
+0000AC B081           00281     BTFSC M_BUTTON
+0000AE EF?? F???      00282     GOTO MAIN_LOOP        ; se M = 1 continua esperando
                       00283 
-0000B2                00284 RIGHT_ROUTINE ; Espera sensor B = 1
-                      00285     ; LEDs
-0000B2 9089           00286     BCF GREEN_LED
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE  7
+                      00284     ; Botão pressionado -> entra em RIGHT
+0000B2 0E02           00285     MOVLW RIGHT
+0000B4 6E20           00286     MOVWF STATE
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE  7
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-0000B4 8289           00287     BSF YELLOW_LED
-0000B6 9689           00288     BCF BLUE_LED
-0000B8 9489           00289     BCF RED_LED
-                      00290 
-0000BA 908C           00291     BCF GATE ; Comporta fechada
-                      00292     
-                      00293     ; B = 1 -> transita para OPEN
-0000BC A482           00294     BTFSS B_SENSOR
-0000BE EF?? F???      00295     GOTO MAIN_LOOP        ; B = 0 -> permanece em RIGHT
-0000C2 0E03           00296     MOVLW OPEN
-0000C4 6E20           00297     MOVWF STATE
-0000C6 EF?? F???      00298     GOTO MAIN_LOOP
-                      00299 
-0000CA                00300 OPEN_ROUTINE ; Abre a comporta e espera sensor P = 1
-                      00301     ; LEDs
-0000CA 9089           00302     BCF GREEN_LED
-0000CC 8289           00303     BSF YELLOW_LED
-0000CE 9689           00304     BCF BLUE_LED
-0000D0 9489           00305     BCF RED_LED
-                      00306 
-                      00307     ; Abre a comporta (uma vez)
-0000D2 808C           00308     BSF GATE
-                      00309     ;Leve delay antes de checar sensor P
-0000D4 0000           00310     NOP
-0000D6 0000           00311     NOP
-0000D8 0000           00312     NOP
-                      00313 
-                      00314     ; Espera P=1
-0000DA A082           00315     BTFSS P_SENSOR
-0000DC EF?? F???      00316     GOTO MAIN_LOOP
-                      00317 
-                      00318     ; P=1 detectado -> fecha comporta e vai para TIME
-0000E0 908C           00319     BCF GATE
-0000E2 0E04           00320     MOVLW TIME
-0000E4 6E20           00321     MOVWF STATE
-0000E6 EF?? F???      00322     GOTO MAIN_LOOP
-                      00323 
+0000B6 EF?? F???      00287     GOTO MAIN_LOOP
+                      00288 
+0000BA                00289 RIGHT_ROUTINE ; Espera sensor B = 1
+                      00290     ; LEDs
+0000BA 9089           00291     BCF GREEN_LED
+0000BC 8289           00292     BSF YELLOW_LED
+0000BE 9689           00293     BCF BLUE_LED
+0000C0 9489           00294     BCF RED_LED
+                      00295 
+0000C2 908D           00296     BCF GATE ; Comporta fechada
+0000C4 EC?? F???      00297     CALL ROTATE_RIGHT
+                      00298     
+                      00299     ; B = 1 -> transita para OPEN
+0000C8 A282           00300     BTFSS B_SENSOR
+0000CA EF?? F???      00301     GOTO MAIN_LOOP        ; B = 0 -> permanece em RIGHT
+0000CE 0E03           00302     MOVLW OPEN
+0000D0 6E20           00303     MOVWF STATE
+0000D2 EF?? F???      00304     GOTO MAIN_LOOP
+                      00305 
+0000D6                00306 OPEN_ROUTINE ; Abre a comporta e espera sensor P = 1
+                      00307     ; LEDs
+0000D6 9089           00308     BCF GREEN_LED
+0000D8 8289           00309     BSF YELLOW_LED
+0000DA 9689           00310     BCF BLUE_LED
+0000DC 9489           00311     BCF RED_LED
+                      00312 
+                      00313     ; Abre a comporta (uma vez)
+0000DE EC?? F???      00314     CALL Delay_5ms
+0000E2 808D           00315     BSF GATE
+                      00316     ;Leve delay antes de checar sensor P
+0000E4 0000           00317     NOP
+0000E6 0000           00318     NOP
+0000E8 0000           00319     NOP
+                      00320 
+                      00321     ; Espera P=1
+0000EA A482           00322     BTFSS P_SENSOR
+0000EC EF?? F???      00323     GOTO MAIN_LOOP
                       00324 
-0000EA                00325 TIME_ROUTINE ; Espera 5s
-                      00326     ; LEDs
-0000EA 9089           00327     BCF GREEN_LED
-0000EC 9289           00328     BCF YELLOW_LED
-0000EE 8689           00329     BSF BLUE_LED
-0000F0 9489           00330     BCF RED_LED
+                      00325     ; P=1 detectado -> fecha comporta e vai para TIME
+0000F0 908D           00326     BCF GATE
+0000F2 0E04           00327     MOVLW TIME
+0000F4 6E20           00328     MOVWF STATE
+0000F6 EF?? F???      00329     GOTO MAIN_LOOP
+                      00330 
                       00331 
-0000F2 908C           00332     BCF GATE ; Comporta fechada
-0000F4 EC?? F???      00333     CALL Delay_5s ; delay de 5s
-0000F8 0E05           00334     MOVLW FINISH
-0000FA 6E20           00335     MOVWF STATE
-0000FC EF?? F???      00336     GOTO MAIN_LOOP
-                      00337 
-000100                00338 FINISH_ROUTINE ; Espera B = 0
-                      00339     ; LEDs
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE  8
+0000FA                00332 TIME_ROUTINE ; Espera 5s
+                      00333     ; LEDs
+0000FA 9089           00334     BCF GREEN_LED
+0000FC 9289           00335     BCF YELLOW_LED
+0000FE 8689           00336     BSF BLUE_LED
+000100 9489           00337     BCF RED_LED
+                      00338 
+000102 908D           00339     BCF GATE ; Comporta fechada
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE  8
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-000100 9089           00340     BCF GREEN_LED
-000102 9289           00341     BCF YELLOW_LED
-000104 9689           00342     BCF BLUE_LED
-000106 8489           00343     BSF RED_LED
+000104 EC?? F???      00340     CALL Delay_5s ; delay de 5s
+000108 0E05           00341     MOVLW FINISH
+00010A 6E20           00342     MOVWF STATE
+00010C EF?? F???      00343     GOTO MAIN_LOOP
                       00344 
-000108 908C           00345     BCF GATE ; Comporta fechada
-                      00346     ; Aguarda sensor B = 0 para completar ciclo
-00010A A482           00347     BTFSS   B_SENSOR
-00010C EF?? F???      00348     GOTO    FINISH_REACHED
-000110 EF?? F???      00349     GOTO    MAIN_LOOP        ; B = 1 -> continua esperando
-                      00350 
-000114                00351 FINISH_REACHED
-000114 0E00           00352     MOVLW IDLE
-000116 6E20           00353     MOVWF STATE
-000118 EF?? F???      00354     GOTO MAIN_LOOP
+000110                00345 FINISH_ROUTINE ; Espera B = 0
+                      00346     ; LEDs
+000110 9089           00347     BCF GREEN_LED
+000112 9289           00348     BCF YELLOW_LED
+000114 9689           00349     BCF BLUE_LED
+000116 8489           00350     BSF RED_LED
+                      00351 
+000118 908D           00352     BCF GATE ; Comporta fechada
+                      00353     ; Aguarda sensor B = 0 para completar ciclo
+00011A EC?? F???      00354     CALL ROTATE_LEFT
                       00355     
-                      00356 ;-------------------------------------------------------
-                      00357 ; Rotinas de rotação 
-                      00358 ;-------------------------------------------------------
-                      00359 ; Rotinas de controle do motor (Não sei se é necessário)
-00011C                00360 ROTATE_RIGHT
-                      00361     ; ...implementar controle do motor para ir à direita...
-00011C 0012           00362     RETURN
-                      00363 
-00011E                00364 ROTATE_LEFT
-                      00365     ; ...implementar controle do motor para ir à esquerda...
-00011E 0012           00366     RETURN
-                      00367 ;=========================================================================
-                      00368 ; Cálculo do número de estouros do Timer1 (Fosc = 8 MHz, prescaler 1:8)
-                      00369 ;=========================================================================
-                      00370 ; Tcy = Fosc / 4 = 8 MHz / 4 = 2 MHz ? 1 ciclo = 0,5 us
-                      00371 ; Ttick = Tcy * prescaler = 0,5 us * 8 = 4 us
-                      00372 ; Tempo 1 overflow = 65536 * Ttick ? 0,262 s
-                      00373 ; Nº de estouros para 5 s = 5 / 0,262 ? 19 (Prefiro usar 20 para 5,24s)
-                      00374 ;=========================================================================
-                      00375 ;-------------------------------------------------------
-                      00376 ; Rotina de delay de 5s
-                      00377 ;-------------------------------------------------------
-000120                00378 Delay_5s:
-000120 6A21           00379     CLRF    TICKS              ; zera contador
-000122                00380 WAIT_LOOP:
-000122 5021           00381     MOVF    TICKS, W
-000124 0A20           00382     XORLW   20                 ; Z=1 quando TICKS == 20
-000126 A4D8           00383     BTFSS   STATUS, Z          ; se Z=0 -> executa GOTO WAIT_LOOP
-000128 EF?? F???      00384     GOTO    WAIT_LOOP
-00012C 0012           00385     RETURN
-Warning[205]: Found directive in column 1. (END)
-                      00386 END
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE  9
+00011E A282           00356     BTFSS   B_SENSOR
+000120 EF?? F???      00357     GOTO    FINISH_REACHED
+000124 EF?? F???      00358     GOTO    MAIN_LOOP        ; B = 1 -> continua esperando
+                      00359 
+000128                00360 FINISH_REACHED
+000128 0E00           00361     MOVLW IDLE
+00012A 6E20           00362     MOVWF STATE
+00012C EF?? F???      00363     GOTO MAIN_LOOP
+                      00364     
+                      00365 ;-------------------------------------------------------
+                      00366 ; Rotinas de rotação do motor
+                      00367 ;-------------------------------------------------------
+000130                00368 ROTATE_RIGHT
+000130 0EF1           00369     MOVLW   0xF1           ; 0x01 (0001)
+000132 6E8C           00370     MOVWF   LATD
+000134 EC?? F???      00371     CALL    Delay_5ms
+                      00372     
+000138 0EF4           00373     MOVLW   0xF4           ; 0x04 (0100)  
+00013A 6E8C           00374     MOVWF   LATD
+00013C EC?? F???      00375     CALL    Delay_5ms
+                      00376     
+000140 0EF2           00377     MOVLW   0xF2           ; 0x02 (0010)
+000142 6E8C           00378     MOVWF   LATD
+000144 EC?? F???      00379     CALL    Delay_5ms
+                      00380     
+000148 0EF8           00381     MOVLW   0xF8           ; 0x08 (1000)
+00014A 6E8C           00382     MOVWF   LATD
+00014C EC?? F???      00383     CALL    Delay_5ms
+000150 0012           00384     RETURN
+                      00385 
+000152                00386 ROTATE_LEFT
+000152 0E08           00387    MOVLW   0x08
+000154 6E8C           00388     MOVWF   LATD
+000156 EC?? F???      00389     CALL    Delay_5ms
+                      00390     
+00015A 0E02           00391     MOVLW   0x02  
+00015C 6E8C           00392     MOVWF   LATD
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE  9
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00015E EC?? F???      00393     CALL    Delay_5ms
+                      00394     
+000162 0E04           00395     MOVLW   0x04
+000164 6E8C           00396     MOVWF   LATD
+000166 EC?? F???      00397     CALL    Delay_5ms
+                      00398     
+00016A 0E01           00399     MOVLW   0x01
+00016C 6E8C           00400     MOVWF   LATD
+00016E EC?? F???      00401     CALL    Delay_5ms
+                      00402     
+000172 0012           00403     RETURN
+                      00404 ;=========================================================================
+                      00405 ; Cálculo do número de estouros do Timer1 (Fosc = 8 MHz, prescaler 1:8)
+                      00406 ;=========================================================================
+                      00407 ; Tcy = Fosc / 4 = 8 MHz / 4 = 2 MHz ? 1 ciclo = 0,5 us
+                      00408 ; Ttick = Tcy * prescaler = 0,5 us * 8 = 4 us
+                      00409 ; Tempo 1 overflow = 65536 * Ttick ? 0,262 s
+                      00410 ; Nº de estouros para 5 s = 5 / 0,262 ? 19 (Prefiro usar 20 para 5,24s)
+                      00411 ;=========================================================================
+                      00412 ;-------------------------------------------------------
+                      00413 ; Rotina de delay de 5s
+                      00414 ;-------------------------------------------------------
+000174                00415 Delay_5s:
+000174 6A21           00416     CLRF    TICKS              ; zera contador
+000176                00417 WAIT_LOOP:
+000176 5021           00418     MOVF    TICKS, W
+000178 0A20           00419     XORLW   20                 ; Z=1 quando TICKS == 20
+00017A A4D8           00420     BTFSS   STATUS, Z          ; se Z=0 -> executa GOTO WAIT_LOOP
+00017C EF?? F???      00421     GOTO    WAIT_LOOP
+000180 0012           00422     RETURN
+                      00423 
+                      00424 ;-------------------------------------------------------
+                      00425 ; Rotina de delay para o motor
+                      00426 ;-------------------------------------------------------
+000182                00427 Delay_5ms:
+000182 0E1F           00428     MOVLW   0x1F              ; Loop externo - valor reduzido
+000184 6E40           00429     MOVWF   0x40              ; Contador externo (usando endereço 0x40)
+000186                00430 Delay_Outer_5ms:
+000186 0E4F           00431     MOVLW   0x4F              ; Loop interno - valor reduzido  
+000188 6E41           00432     MOVWF   0x41              ; Contador interno (usando endereço 0x41)
+00018A                00433 Delay_Inner_5ms:
+00018A 0000           00434     NOP                       ; 1 ciclo
+00018C 0000           00435     NOP                       ; 1 ciclo
+00018E 2E41           00436     DECFSZ  0x41, F           ; Decrementa contador interno
+000190 EF?? F???      00437     GOTO    Delay_Inner_5ms   ; Continua loop interno
+000194 2E40           00438     DECFSZ  0x40, F           ; Decrementa contador externo
+000196 EF?? F???      00439     GOTO    Delay_Outer_5ms   ; Continua loop externo
+00019A 0012           00440     RETURN
+                      00441 
+                      00442 
+                      00443     END
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE 10
 
 
 SYMBOL TABLE
@@ -511,7 +573,7 @@ AN1                               00000001
 AN2                               00000002
 AN3                               00000003
 AN4                               00000005
-A_SENSOR                          PORTC, 1
+A_SENSOR                          PORTC, 0
 BANKED                            00000001
 BAUDCON                           00000FB8
 BAUDCTL                           00000FB8
@@ -524,7 +586,7 @@ BLUE_LED                          LATA, 3
 BOR                               00000000
 BRG16                             00000003
 BRGH                              00000002
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE 10
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE 11
 
 
 SYMBOL TABLE
@@ -535,7 +597,7 @@ BTOEE                             00000004
 BTOEF                             00000004
 BTSEE                             00000007
 BTSEF                             00000007
-B_SENSOR                          PORTC, 2
+B_SENSOR                          PORTC, 1
 C                                 00000000
 C1INV                             00000004
 C1OUT                             00000006
@@ -583,7 +645,7 @@ CLKCFG1                           00000007
 CM0                               00000000
 CM1                               00000001
 CM2                               00000002
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE 11
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE 12
 
 
 SYMBOL TABLE
@@ -628,7 +690,10 @@ DIR                               00000002
 DONE                              00000001
 D_A                               00000005
 D_NOT_A                           00000005
-Delay_5s                          00000120
+Delay_5ms                         00000182
+Delay_5s                          00000174
+Delay_Inner_5ms                   0000018A
+Delay_Outer_5ms                   00000186
 ECCP1AS                           00000FB6
 ECCP1CON                          00000FBD
 ECCP1DEL                          00000FB7
@@ -639,15 +704,15 @@ ECCPASE                           00000007
 EEADR                             00000FA9
 EECON1                            00000FA6
 EECON2                            00000FA7
-EEDATA                            00000FA8
-EEIE                              00000004
-EEIF                              00000004
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE 12
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE 13
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+EEDATA                            00000FA8
+EEIE                              00000004
+EEIF                              00000004
 EEIP                              00000004
 EEPGD                             00000007
 ENDP0                             00000003
@@ -662,8 +727,8 @@ EPSTALL                           00000000
 FAST                              00000001
 FERR                              00000002
 FINISH                            00000005
-FINISH_REACHED                    00000114
-FINISH_ROUTINE                    00000100
+FINISH_REACHED                    00000128
+FINISH_ROUTINE                    00000110
 FLTS                              00000002
 FREE                              00000004
 FRM0                              00000000
@@ -687,7 +752,7 @@ FSR1L                             00000FE1
 FSR2                              00000002
 FSR2H                             00000FDA
 FSR2L                             00000FD9
-GATE                              LATD, 0
+GATE                              LATE, 0
 GCEN                              00000007
 GIE                               00000007
 GIEH                              00000007
@@ -698,15 +763,15 @@ GO_DONE                           00000001
 GO_NOT_DONE                       00000001
 GREEN_LED                         LATA, 0
 HIGH_ISR                          00000000
-HLVDCON                           00000FD2
-HLVDEN                            00000004
-HLVDIE                            00000002
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE 13
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE 14
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+HLVDCON                           00000FD2
+HLVDEN                            00000004
+HLVDIE                            00000002
 HLVDIF                            00000002
 HLVDIN                            00000005
 HLVDIP                            00000002
@@ -722,8 +787,8 @@ IDLE                              00000000
 IDLEIE                            00000004
 IDLEIF                            00000004
 IDLEN                             00000007
-IDLE_REACHED                      00000092
-IDLE_ROUTINE                      0000007E
+IDLE_REACHED                      0000009A
+IDLE_ROUTINE                      00000086
 INDF0                             00000FEF
 INDF1                             00000FE7
 INDF2                             00000FDF
@@ -757,15 +822,15 @@ IOFS                              00000002
 IPEN                              00000007
 IPR1                              00000F9F
 IPR2                              00000FA2
-IRCF0                             00000004
-IRCF1                             00000005
-IRCF2                             00000006
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE 14
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE 15
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+IRCF0                             00000004
+IRCF1                             00000005
+IRCF2                             00000006
 IRVST                             00000005
 IVRST                             00000005
 LATA                              00000F89
@@ -816,17 +881,17 @@ LVDL1                             00000001
 LVDL2                             00000002
 LVDL3                             00000003
 LVV0                              00000000
-LVV1                              00000001
-LVV2                              00000002
-LVV3                              00000003
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE 15
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE 16
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+LVV1                              00000001
+LVV2                              00000002
+LVV3                              00000003
 MAIN                              00000000
-MAIN_LOOP                         0000003E
+MAIN_LOOP                         00000046
 M_BUTTON                          PORTB, 0
 N                                 00000004
 NOT_A                             00000005
@@ -846,7 +911,7 @@ NOT_WRITE                         00000002
 OERR                              00000001
 OESPP                             00000002
 OPEN                              00000003
-OPEN_ROUTINE                      000000CA
+OPEN_ROUTINE                      000000D6
 OSC2                              00000006
 OSCCON                            00000FD3
 OSCFIE                            00000007
@@ -875,15 +940,15 @@ PDC3                              00000003
 PDC4                              00000004
 PDC5                              00000005
 PDC6                              00000006
-PEIE                              00000006
-PEIE_GIEL                         00000006
-PEN                               00000002
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE 16
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE 17
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+PEIE                              00000006
+PEIE_GIEL                         00000006
+PEN                               00000002
 PGC                               00000006
 PGD                               00000007
 PGM                               00000005
@@ -926,7 +991,7 @@ PSSAC0                            00000002
 PSSAC1                            00000003
 PSSBD0                            00000000
 PSSBD1                            00000001
-P_SENSOR                          PORTC, 0
+P_SENSOR                          PORTC, 2
 R                                 00000002
 RA0                               00000000
 RA1                               00000001
@@ -934,15 +999,15 @@ RA2                               00000002
 RA3                               00000003
 RA4                               00000004
 RA5                               00000005
-RA6                               00000006
-RB0                               00000000
-RB1                               00000001
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE 17
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE 18
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+RA6                               00000006
+RB0                               00000000
+RB1                               00000001
 RB2                               00000002
 RB3                               00000003
 RB4                               00000004
@@ -990,18 +1055,18 @@ RED_LED                           LATA, 2
 RESUME                            00000002
 RI                                00000004
 RIGHT                             00000002
-RIGHT_ROUTINE                     000000B2
-ROTATE_LEFT                       0000011E
-ROTATE_RIGHT                      0000011C
-RSEN                              00000001
-RX                                00000007
-RX9                               00000006
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE 18
+RIGHT_ROUTINE                     000000BA
+ROTATE_LEFT                       00000152
+ROTATE_RIGHT                      00000130
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE 19
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+RSEN                              00000001
+RX                                00000007
+RX9                               00000006
 RX9D                              00000000
 RXDTP                             00000005
 R_NOT_W                           00000002
@@ -1052,20 +1117,20 @@ SSPIF                             00000003
 SSPIP                             00000003
 SSPM0                             00000000
 SSPM1                             00000001
-SSPM2                             00000002
-SSPM3                             00000003
-SSPOV                             00000006
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE 19
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE 20
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+SSPM2                             00000002
+SSPM3                             00000003
+SSPOV                             00000006
 SSPSTAT                           00000FC7
 STALLIE                           00000005
 STALLIF                           00000005
 START                             00000001
-START_ROUTINE                     0000009A
+START_ROUTINE                     000000A2
 STATE                             00000020
 STATUS                            00000FD8
 STKFUL                            00000007
@@ -1111,15 +1176,15 @@ T2OUTPS3                          00000006
 T3CCP1                            00000003
 T3CCP2                            00000006
 T3CKPS0                           00000004
-T3CKPS1                           00000005
-T3CON                             00000FB1
-T3NSYNC                           00000002
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE 20
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE 21
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+T3CKPS1                           00000005
+T3CON                             00000FB1
+T3NSYNC                           00000002
 T3SYNC                            00000002
 TABLAT                            00000FF5
 TBLPTR                            00000FF6
@@ -1128,7 +1193,7 @@ TBLPTRL                           00000FF6
 TBLPTRU                           00000FF8
 TICKS                             00000021
 TIME                              00000004
-TIME_ROUTINE                      000000EA
+TIME_ROUTINE                      000000FA
 TMR0                              00000FD6
 TMR0H                             00000FD7
 TMR0IE                            00000005
@@ -1170,15 +1235,15 @@ TRISA                             00000F92
 TRISA0                            00000000
 TRISA1                            00000001
 TRISA2                            00000002
-TRISA3                            00000003
-TRISA4                            00000004
-TRISA5                            00000005
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE 21
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE 22
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+TRISA3                            00000003
+TRISA4                            00000004
+TRISA5                            00000005
 TRISA6                            00000006
 TRISB                             00000F93
 TRISB0                            00000000
@@ -1229,15 +1294,15 @@ TXSTA                             00000FAC
 UA                                00000001
 UADDR                             00000F6E
 UCFG                              00000F6F
-UCON                              00000F6D
-UEIE                              00000F6B
-UEIR                              00000F6A
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE 22
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE 23
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+UCON                              00000F6D
+UEIE                              00000F6B
+UEIR                              00000F6A
 UEP0                              00000F70
 UEP1                              00000F71
 UEP10                             00000F7A
@@ -1278,7 +1343,7 @@ VDIRMAG                           00000007
 VREFM                             00000002
 VREFP                             00000003
 W                                 00000000
-WAIT_LOOP                         00000122
+WAIT_LOOP                         00000176
 WCOL                              00000007
 WDTCON                            00000FD1
 WR                                00000001
@@ -1288,15 +1353,15 @@ WRERR                             00000003
 WRSPP                             00000006
 WS0                               00000000
 WS1                               00000001
-WS2                               00000002
-WS3                               00000003
-WUE                               00000001
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE 23
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE 24
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+WS2                               00000002
+WS3                               00000003
+WUE                               00000001
 YELLOW_LED                        LATA, 1
 Z                                 00000002
 _BORV_0_2L                        000000E7
@@ -1347,15 +1412,15 @@ _EBTR1_OFF_7L                     000000FF
 _EBTR1_ON_7L                      000000FD
 _EBTR2_OFF_7L                     000000FF
 _EBTR2_ON_7L                      000000FB
-_EBTR3_OFF_7L                     000000FF
-_EBTR3_ON_7L                      000000F7
-_EBTRB_OFF_7H                     000000FF
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE 24
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE 25
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+_EBTR3_OFF_7L                     000000FF
+_EBTR3_ON_7L                      000000F7
+_EBTRB_OFF_7H                     000000FF
 _EBTRB_ON_7H                      000000BF
 _FCMEN_OFF_1H                     000000BF
 _FCMEN_ON_1H                      000000FF
@@ -1406,15 +1471,15 @@ _STVREN_OFF_4L                    000000FE
 _STVREN_ON_4L                     000000FF
 _USBDIV_1_1L                      000000DF
 _USBDIV_2_1L                      000000FF
-_VREGEN_OFF_2L                    000000DF
-_VREGEN_ON_2L                     000000FF
-_WDTPS_1024_2H                    000000F5
-MPASM 5.83                          MAIN.ASM   9-26-2025  14:03:56         PAGE 25
+MPASM 5.83                          MAIN.ASM   9-28-2025  15:38:19         PAGE 26
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+_VREGEN_OFF_2L                    000000DF
+_VREGEN_ON_2L                     000000FF
+_WDTPS_1024_2H                    000000F5
 _WDTPS_128_2H                     000000EF
 _WDTPS_16384_2H                   000000FD
 _WDTPS_16_2H                      000000E9
@@ -1451,7 +1516,7 @@ _XINST_ON_4L                      000000FF
 __18F4550                         00000001
 
 Errors   :     0
-Warnings :     4 reported,     0 suppressed
+Warnings :     3 reported,     0 suppressed
 Messages :     0 reported,     0 suppressed
 
 
