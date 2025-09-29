@@ -261,11 +261,11 @@ MAIN
     
 IDLE_ROUTINE ; Carro andando até sensor A = 1
     ; LEDs
-    BSF GREEN_LED
     BCF ORANGE_LED
     BCF YELLOW_LED
     BCF BLUE_LED
     BCF RED_LED
+    BSF GREEN_LED
     
     BCF GATE ; Comporta fechada
     
@@ -281,10 +281,10 @@ IDLE_REACHED
 START_ROUTINE ; Espera pressionar o botão M
     ; LEDs
     BCF GREEN_LED
-    BSF ORANGE_LED
     BCF YELLOW_LED
     BCF BLUE_LED
     BCF RED_LED
+    BSF ORANGE_LED
 
     BCF GATE  ; Comporta fechada
 
@@ -301,9 +301,9 @@ RIGHT_ROUTINE ; Espera sensor B = 1
     ; LEDs
     BCF GREEN_LED
     BCF ORANGE_LED
-    BSF YELLOW_LED
     BCF BLUE_LED
     BCF RED_LED
+    BSF YELLOW_LED
 
     BCF GATE ; Comporta fechada
     CALL ROTATE_RIGHT
@@ -319,20 +319,20 @@ OPEN_ROUTINE ; Abre a comporta e espera sensor P = 1
     ; LEDs
     BCF GREEN_LED
     BCF ORANGE_LED
-    BSF YELLOW_LED
     BCF BLUE_LED
     BCF RED_LED
+    BSF YELLOW_LED
 
     ; Abre a comporta (uma vez)
+    BTFSS GATE
+    CALL Delay_5s
     BSF GATE
-    CALL Delay_5ms
 
     ; Espera P=1
     BTFSS P_SENSOR
     GOTO MAIN_LOOP
 
-    ; P=1 detectado -> fecha comporta e vai para TIME
-    BCF GATE
+    ; P=1 detectado -> fecha e vai para TIME
     MOVLW TIME
     MOVWF STATE
     GOTO MAIN_LOOP
@@ -343,11 +343,12 @@ TIME_ROUTINE ; Espera 5s
     BCF GREEN_LED
     BCF ORANGE_LED
     BCF YELLOW_LED
-    BSF BLUE_LED
     BCF RED_LED
-
-    BCF GATE ; Comporta fechada
+    BSF BLUE_LED
+    
+    BTFSC GATE
     CALL Delay_5s ; delay de 5s
+    BCF GATE ; Comporta fechada
     MOVLW FINISH
     MOVWF STATE
     GOTO MAIN_LOOP
@@ -361,12 +362,16 @@ FINISH_ROUTINE ; Espera B = 0
     BSF RED_LED
 
     BCF GATE ; Comporta fechada
-    ; Aguarda sensor B = 0 para completar ciclo
     CALL ROTATE_LEFT
+
+    ; Aguarda sensor B = 0 / A = 1 para completar ciclo
+    BTFSC B_SENSOR 
+    GOTO MAIN_LOOP 
+
+    BTFSS A_SENSOR 
+    GOTO MAIN_LOOP 
     
-    BTFSS   B_SENSOR
     GOTO    FINISH_REACHED
-    GOTO    MAIN_LOOP        ; B = 1 -> continua esperando
 
 FINISH_REACHED
     MOVLW IDLE
