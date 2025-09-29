@@ -15,6 +15,7 @@
 ;    23/09/2025 - Criação                                                      *
 ;    24/09/2025 - Estados adicionados e configurados                           *
 ;    25/09/2025 - Estados alterados e simplificação                            *
+;    28/09/2025 - Controle motor, tempo concertado e add+ um led de status     *                       *
 ;                                                                              *
 ;*******************************************************************************
 ;*******************************************************************************
@@ -28,7 +29,7 @@
   CONFIG  USBDIV = 1            ; USB Clock Selection bit (used in Full-Speed USB mode only; UCFG:FSEN = 1) (USB clock source comes directly from the primary oscillator block with no postscale)
 
 ; CONFIG1H
-  CONFIG  FOSC = INTOSC_HS      ; Oscillator Selection bits (XT oscillator (XT))
+  CONFIG  FOSC = INTOSCIO_EC    ; Oscillator Selection bits (XT oscillator (XT))
   CONFIG  FCMEN = OFF           ; Fail-Safe Clock Monitor Enable bit (Fail-Safe Clock Monitor disabled)
   CONFIG  IESO = OFF            ; Internal/External Oscillator Switchover bit (Oscillator Switchover mode disabled)
 
@@ -122,11 +123,10 @@ _HIGH_ISR_DONE
     MOVF    SAVED_W, W
     RETFIE FAST
 
-ISRL      CODE                     ; let linker place low ISR routine
-      
+ISRL      CODE                     
+    
 LOW_ISR
-;       <Search the device datasheet for 'context' and copy interrupt
-;       context saving code here>
+      ; Nenhuma interrupçao de baixa prioridade implementada
     RETFIE
 
 ;*******************************************************************************
@@ -146,9 +146,10 @@ ENDC
 #define A_SENSOR PORTC, 0
 #define B_SENSOR PORTC, 1
 #define GREEN_LED LATA, 0
-#define YELLOW_LED LATA, 1
-#define RED_LED LATA, 2
-#define BLUE_LED LATA, 3
+#define ORANGE_LED LATA, 1
+#define YELLOW_LED LATA, 2
+#define RED_LED LATA, 3
+#define BLUE_LED LATA, 4
 #define GATE LATE, 0
  
 ;Define dos estados
@@ -159,29 +160,37 @@ OPEN EQU 3
 TIME EQU 4
 FINISH EQU 5
 
-MAIN_PROG CODE                      ; let linker place main program
+MAIN_PROG CODE                      
 
 MAIN
+    ; Coloca INTOSC em 8 MHz
+    MOVLW   0x72        ; 0111 0010 = 8 MHz INTOSC
+    MOVWF   OSCCON
+    ; Entradas analógicas desabilitadas (Todas Digitais)
     MOVLW 0x0F
     MOVWF ADCON1
 
     ; Configura entradas e saidas
-    BSF TRISB, 0
+    BSF TRISB, 0 ; Botão
+    ;Sensores
     BSF TRISC, 0
     BSF TRISC, 1
     BSF TRISC, 2
+    ;Comporta
     BCF TRISE, 0
+    ;LEDS
     BCF TRISA, 0
     BCF TRISA, 1
     BCF TRISA, 2
     BCF TRISA, 3
-    
+    BCF TRISA, 4
+    ; Bobinas Motor
     BCF TRISD, 0
     BCF TRISD, 1
     BCF TRISD, 2
     BCF TRISD, 3
     
-    ; inicializa saídas
+    ; Inicializa saídas
     BCF LATA,0
     BCF LATA,1
     BCF LATA,2
@@ -253,6 +262,7 @@ MAIN
 IDLE_ROUTINE ; Carro andando até sensor A = 1
     ; LEDs
     BSF GREEN_LED
+    BCF ORANGE_LED
     BCF YELLOW_LED
     BCF BLUE_LED
     BCF RED_LED
@@ -270,7 +280,8 @@ IDLE_REACHED
 
 START_ROUTINE ; Espera pressionar o botão M
     ; LEDs
-    BSF GREEN_LED
+    BCF GREEN_LED
+    BSF ORANGE_LED
     BCF YELLOW_LED
     BCF BLUE_LED
     BCF RED_LED
@@ -289,6 +300,7 @@ START_ROUTINE ; Espera pressionar o botão M
 RIGHT_ROUTINE ; Espera sensor B = 1
     ; LEDs
     BCF GREEN_LED
+    BCF ORANGE_LED
     BSF YELLOW_LED
     BCF BLUE_LED
     BCF RED_LED
@@ -306,17 +318,14 @@ RIGHT_ROUTINE ; Espera sensor B = 1
 OPEN_ROUTINE ; Abre a comporta e espera sensor P = 1
     ; LEDs
     BCF GREEN_LED
+    BCF ORANGE_LED
     BSF YELLOW_LED
     BCF BLUE_LED
     BCF RED_LED
 
     ; Abre a comporta (uma vez)
-    CALL Delay_5ms
     BSF GATE
-    ;Leve delay antes de checar sensor P
-    NOP
-    NOP
-    NOP
+    CALL Delay_5ms
 
     ; Espera P=1
     BTFSS P_SENSOR
@@ -332,6 +341,7 @@ OPEN_ROUTINE ; Abre a comporta e espera sensor P = 1
 TIME_ROUTINE ; Espera 5s
     ; LEDs
     BCF GREEN_LED
+    BCF ORANGE_LED
     BCF YELLOW_LED
     BSF BLUE_LED
     BCF RED_LED
@@ -345,6 +355,7 @@ TIME_ROUTINE ; Espera 5s
 FINISH_ROUTINE ; Espera B = 0
     ; LEDs
     BCF GREEN_LED
+    BCF ORANGE_LED
     BCF YELLOW_LED
     BCF BLUE_LED
     BSF RED_LED
@@ -384,22 +395,21 @@ ROTATE_RIGHT
     RETURN
 
 ROTATE_LEFT
-   MOVLW   0x08
+    MOVLW   0x08	   ; 0x08 (1000)
     MOVWF   LATD
     CALL    Delay_5ms
     
-    MOVLW   0x02  
+    MOVLW   0x02	   ; 0x02 (0010)
+    MOVWF   LATD	   
+    CALL    Delay_5ms
+    
+    MOVLW   0x04	   ; 0x04 (0100)
     MOVWF   LATD
     CALL    Delay_5ms
     
-    MOVLW   0x04
+    MOVLW   0x01	   ; 0x01 (0001)
     MOVWF   LATD
     CALL    Delay_5ms
-    
-    MOVLW   0x01
-    MOVWF   LATD
-    CALL    Delay_5ms
-    
     RETURN
 ;=========================================================================
 ; Cálculo do número de estouros do Timer1 (Fosc = 8 MHz, prescaler 1:8)
@@ -416,20 +426,20 @@ Delay_5s:
     CLRF    TICKS              ; zera contador
 WAIT_LOOP:
     MOVF    TICKS, W
-    XORLW   20                 ; Z=1 quando TICKS == 20
+    XORLW   16                 ; Z=1 quando TICKS == 16 (Ajuste Ciclos)
     BTFSS   STATUS, Z          ; se Z=0 -> executa GOTO WAIT_LOOP
     GOTO    WAIT_LOOP
     RETURN
 
 ;-------------------------------------------------------
-; Rotina de delay para o motor
+; Rotina de delay 5ms
 ;-------------------------------------------------------
 Delay_5ms:
-    MOVLW   0x1F              ; Loop externo - valor reduzido
-    MOVWF   0x40              ; Contador externo (usando endereço 0x40)
+    MOVLW   0x1F              ; Loop externo
+    MOVWF   0x40              ; Contador externo (usando 0x1F = 31)
 Delay_Outer_5ms:
-    MOVLW   0x4F              ; Loop interno - valor reduzido  
-    MOVWF   0x41              ; Contador interno (usando endereço 0x41)
+    MOVLW   0x4F              ; Loop interno
+    MOVWF   0x41              ; Contador interno (usando 0x4F = 79)
 Delay_Inner_5ms:
     NOP                       ; 1 ciclo
     NOP                       ; 1 ciclo
